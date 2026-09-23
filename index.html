@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Chat Bot</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #e8edf2;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            min-height: 100vh;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 500px;
+            height: 90vh;
+            max-height: 750px;
+
+            background: white;
+            display: flex;
+            flex-direction: column;
+
+            border-radius: 12px;
+            overflow: hidden;
+
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .chat-header {
+            background: #2481cc;
+            color: white;
+            padding: 20px;
+
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+
+            overflow-y: auto;
+            background: #dce5ed;
+
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 12px;
+
+            max-width: 85%;
+            line-height: 1.5;
+
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .bot-message {
+            background: white;
+            align-self: flex-start;
+        }
+
+        .user-message {
+            background: #d2f8c6;
+            align-self: flex-end;
+        }
+
+        .number-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+
+            padding: 15px;
+            background: white;
+        }
+
+        .number-buttons button {
+            background: #2481cc;
+            color: white;
+
+            border: none;
+            border-radius: 8px;
+
+            padding: 12px 18px;
+            font-size: 16px;
+
+            cursor: pointer;
+        }
+
+        .number-buttons button:hover {
+            background: #1768a8;
+        }
+
+        .chat-input {
+            display: flex;
+            padding: 15px;
+            gap: 10px;
+
+            border-top: 1px solid #ddd;
+        }
+
+        .chat-input input {
+            flex: 1;
+            min-width: 0;
+
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+
+            font-size: 16px;
+        }
+
+        .chat-input button {
+            background: #2481cc;
+            color: white;
+
+            border: none;
+            border-radius: 8px;
+
+            padding: 12px 18px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 500px) {
+            .chat-container {
+                height: 100dvh;
+                max-height: none;
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="chat-container">
+
+    <div class="chat-header">
+        Chat Bot
+    </div>
+
+    <div class="chat-messages" id="messages"></div>
+
+    <div class="number-buttons">
+        <button onclick="sendMessage('1')">1</button>
+        <button onclick="sendMessage('2')">2</button>
+        <button onclick="sendMessage('3')">3</button>
+        <button onclick="sendMessage('4')">4</button>
+        <button onclick="sendMessage('5')">5</button>
+    </div>
+
+    <form class="chat-input" id="chatForm">
+        <input
+            type="text"
+            id="messageInput"
+            placeholder="Scrivi un messaggio..."
+            autocomplete="off"
+            aria-label="Messaggio"
+        >
+
+        <button type="submit">Invia</button>
+    </form>
+
+</div>
+
+<script>
+
+    // Texts
+
+    const text1 = `C’è chi dentro la mente si sente straziato 
+perché è grave che il mare fiero, i lecci tenaci, 
+il cigolio delle auto, il ragionare delle persone, 
+tutto, tutto racconti di cose sparite 
+che nessuno più attende. 
+C’è chi ne soffre sebbene soffrire non serva. 
+
+Franco Fortini, Paesaggio con serpente, Lo spazio…`
+
+    const text2 = `Vorrei con te passeggiare, un giorno di primavera, col cielo di color grigio e ancora qualche vecchia foglia dell’anno prima trascinata per le strade dal vento, nei quartieri della periferia; e che fosse domenica. In tali contrade sorgono spesso pensieri malinconici e grandi; e in date ore vaga la poesia, congiungendo i cuori di quelli che si vogliono bene. Nascono inoltre speranze che non si sanno dire, favorite dagli orizzonti sterminati dietro le case, dai treni fuggenti, dalle nuvole del settentrione. Ci terremo semplicemente per mano e andremo con passo leggero, dicendo cose insensate, stupide e care. Fino a che si accenderanno i lampioni e dai casamenti squallidi usciranno le storie sinistre delle città, le avventure, i vagheggiati romanzi. E allora noi taceremo sempre tenendoci per mano, poiché le anime si parleranno senza parola. Ma tu — adesso mi ricordo — mai mi dicesti cose insensate, stupide e care. Né puoi quindi amare quelle domeniche che dico, né l’anima tua sa parlare alla mia in silenzio, né riconosci all’ora giusta l’incantesimo delle città, né le speranze che scendono dal settentrione. Tu preferisci le luci, la folla, gli uomini che ti guardano, le vie dove dicono si possa incontrar la fortuna. Tu sei diversa da me e se venissi quel giorno a passeggiare, ti lamenteresti di essere stanca; solo questo e nient’altro. 
+
+Dino Buzzati, La boutique del mistero, Inviti superflui.`
+
+
+    const text3 = `Da piccolo ero un ragazzino di merda... Mi sentivo sempre triste e solo...
+E ora, da adulto... mi rendo conto che quei giorni erano comunque migliori...
+Anche se non giocavo ai videogiochi o facevo molto sport... dormivo davvero benissimo... Quei giorni in cui la scuola veniva chiusa... Quei giorni di scuola...
+Ridevo delle persone che ascoltavano Ye Kagaz Ki Kashti e si mettevano a piangere... Ora invece io stesso non riesco ad ascoltare tutta quella canzone senza versare una lacrima.
+Fuck, man.
+Vorrei poter dire a ogni bambino di non confrontare la propria infanzia con quella degli altri, perché alla fine non ha importanza... L'infanzia non torna mai... Vivila... Fuck.
+
+Utente di Reddit, r/India.`
+
+    const text4 = `Faccio un gioco in cui cammino, su per Lady Margaret Road. Sono ancora dentro, quando gli occhi mettono a fuoco. Ecco le mura del giardino. Ecco gli alberi più spogli. Fedele al mio passo ma abituata alle foglie e al tintinnante scavalcare che suggeriscono. Avanti e basta. Nient’altro. Dalla coscia all’anca le gambe si fan strada nella notte lieve, o alle prime luci del giorno, non c’è altro nel mio corpo al di là del suo muovermi. Averlo schivato, semplicemente. Andare fin quassù. Testimoni tutte le finestre da cui mi nascondo nel mio cappotto rosso. Nei miei stivali neri. Valgono il mio attraversare sirene e pioggia. Mi torturano di comodità in questi fine settimana da sola; zampillano splendore sulla superficie opaca di questa vita spasimante che sta diventando vissuta in solitario. Perché sono. Perché non sono. Dov’è peraltro la strada per potere? Non sono persa. O non troppo persa. Sola. Ecco cosa sono e non so cosa fare.
+
+Eimear McBride, Bohémien minori.`
+
+    const text5 = `Ultima frase: quando ho perso ogni cosa in mano mi resta soltanto la vita. Ma dentro una vita tanto grande, come farò io a ritrovarti?
+
+Asli Erdoğan, Tutte le ore e nessuna.`
+
+
+    const outputs = {
+        "1": text1,
+
+        "2": text2,
+
+        "3": text3,
+
+        "4": text4,
+
+        "5": text5
+    };
+
+
+    const messages = document.getElementById("messages");
+
+    const input = document.getElementById("messageInput");
+
+
+    // Add a message to the chat.
+
+    function addMessage(text, sender) {
+
+        const message = document.createElement("div");
+
+        message.classList.add("message");
+
+        message.classList.add(
+            sender === "bot" ? "bot-message" : "user-message"
+        );
+
+        message.textContent = text;
+
+        messages.appendChild(message);
+
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+
+    // Process a message from the user.
+
+    function sendMessage(value) {
+
+        const selectedOption = value.trim();
+
+        if (!selectedOption) {
+            return;
+        }
+
+        // Display the user's message.
+        addMessage(selectedOption, "user");
+
+        // Get the corresponding response.
+        const response =
+            outputs[selectedOption] || "Scegli un numero da 1 a 5";
+
+        // Display the bot's response.
+        addMessage(response, "bot");
+
+        // Clear the input.
+        input.value = "";
+    }
+
+
+    // Process typed messages.
+
+    document.getElementById("chatForm").addEventListener(
+        "submit",
+        function(event) {
+
+            event.preventDefault();
+
+            sendMessage(input.value);
+        }
+    );
+
+
+    // Initial message when the website opens.
+
+    addMessage("Scegli un numero da 1 a 5", "bot");
+
+</script>
+
+</body>
+</html>
