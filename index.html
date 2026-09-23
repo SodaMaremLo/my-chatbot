@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
     <title>Chat Bot</title>
 
@@ -46,6 +46,41 @@
 
             font-size: 20px;
             font-weight: bold;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .clear-chat-btn {
+            background: transparent;
+            border: none;
+            color: white;
+
+            font-size: 18px;
+            line-height: 1;
+
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            opacity: 0.9;
+            transition: background 0.15s ease, opacity 0.15s ease;
+        }
+
+        .clear-chat-btn:hover {
+            background: rgba(255,255,255,0.15);
+            opacity: 1;
+        }
+
+        .clear-chat-btn svg {
+            width: 20px;
+            height: 20px;
+            display: block;
         }
 
         .chat-messages {
@@ -69,6 +104,13 @@
 
             white-space: pre-wrap;
             overflow-wrap: anywhere;
+
+            animation: messageIn 0.2s ease;
+        }
+
+        @keyframes messageIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .bot-message {
@@ -79,6 +121,31 @@
         .user-message {
             background: #d2f8c6;
             align-self: flex-end;
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 16px;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #a9b3bd;
+            animation: typingBounce 1.3s infinite ease-in-out;
+        }
+
+        .typing-indicator span:nth-child(1) { animation-delay: 0s; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes typingBounce {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-6px); opacity: 1; }
         }
 
         .number-buttons {
@@ -105,6 +172,13 @@
 
         .number-buttons button:hover {
             background: #1768a8;
+        }
+
+        .number-buttons button:disabled,
+        .chat-input input:disabled,
+        .chat-input button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .chat-input {
@@ -152,7 +226,22 @@
 <div class="chat-container">
 
     <div class="chat-header">
-        Chat Bot
+        <span>Chat Bot</span>
+        <button
+            type="button"
+            class="clear-chat-btn"
+            id="clearChatBtn"
+            title="Cancella chat"
+            aria-label="Cancella chat"
+        >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                <path d="M10 11v6"></path>
+                <path d="M14 11v6"></path>
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+            </svg>
+        </button>
     </div>
 
     <div class="chat-messages" id="messages"></div>
@@ -232,6 +321,12 @@ Asli Erdoğan, Tutte le ore e nessuna.`
 
     const input = document.getElementById("messageInput");
 
+    const numberButtons = document.querySelectorAll(".number-buttons button");
+
+    const sendButton = document.querySelector(".chat-input button");
+
+    let isTyping = false;
+
 
     // Add a message to the chat.
 
@@ -253,9 +348,55 @@ Asli Erdoğan, Tutte le ore e nessuna.`
     }
 
 
+    // Show the animated "typing..." bubble.
+
+    function showTyping() {
+
+        const typingEl = document.createElement("div");
+
+        typingEl.classList.add("message", "bot-message", "typing-indicator");
+
+        typingEl.id = "typingIndicator";
+
+        typingEl.innerHTML = "<span></span><span></span><span></span>";
+
+        messages.appendChild(typingEl);
+
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+
+    // Remove the "typing..." bubble.
+
+    function removeTyping() {
+
+        const typingEl = document.getElementById("typingIndicator");
+
+        if (typingEl) {
+            typingEl.remove();
+        }
+    }
+
+
+    // Enable/disable inputs while the bot is "typing".
+
+    function setInputsEnabled(enabled) {
+
+        input.disabled = !enabled;
+
+        sendButton.disabled = !enabled;
+
+        numberButtons.forEach(btn => btn.disabled = !enabled);
+    }
+
+
     // Process a message from the user.
 
     function sendMessage(value) {
+
+        if (isTyping) {
+            return;
+        }
 
         const selectedOption = value.trim();
 
@@ -266,15 +407,56 @@ Asli Erdoğan, Tutte le ore e nessuna.`
         // Display the user's message.
         addMessage(selectedOption, "user");
 
-        // Get the corresponding response.
-        const response =
-            outputs[selectedOption] || "Scegli un numero da 1 a 5";
-
-        // Display the bot's response.
-        addMessage(response, "bot");
-
         // Clear the input.
         input.value = "";
+
+        // Show the typing animation, then reveal the response.
+        isTyping = true;
+
+        setInputsEnabled(false);
+
+        showTyping();
+
+        const delay = 700 + Math.random() * 600;
+
+        setTimeout(function() {
+
+            removeTyping();
+
+            const response =
+                outputs[selectedOption] || "Scegli un numero da 1 a 5";
+
+            addMessage(response, "bot");
+
+            isTyping = false;
+
+            setInputsEnabled(true);
+
+            input.focus();
+
+        }, delay);
+    }
+
+
+    // Clear the whole chat and start over.
+
+    function clearChat() {
+
+        const confirmed = window.confirm("Vuoi davvero cancellare tutta la chat?");
+
+        if (!confirmed) {
+            return;
+        }
+
+        removeTyping();
+
+        isTyping = false;
+
+        setInputsEnabled(true);
+
+        messages.innerHTML = "";
+
+        addMessage("Scegli un numero da 1 a 5", "bot");
     }
 
 
@@ -288,6 +470,14 @@ Asli Erdoğan, Tutte le ore e nessuna.`
 
             sendMessage(input.value);
         }
+    );
+
+
+    // Clear chat button.
+
+    document.getElementById("clearChatBtn").addEventListener(
+        "click",
+        clearChat
     );
 
 
